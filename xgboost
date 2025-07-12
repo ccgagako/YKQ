@@ -1,0 +1,150 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
+from sklearn.preprocessing import OneHotEncoder
+from xgboost import XGBRegressor
+from sklearn.preprocessing import LabelEncoder
+
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 1. 读取数据
+df = pd.read_csv("Database.csv")
+label_encoder = LabelEncoder()
+
+for column in df.columns:
+    if df[column].dtype == 'object' or df[column].apply(type).nunique() > 1:
+        df[column] = df[column].astype(str)
+        df[column] = label_encoder.fit_transform(df[column])
+
+initial_row_count = df.shape[0]
+df.dropna(inplace=True)
+final_row_count = df.shape[0]
+
+
+X = df.iloc[:, 1:-1]
+y = df.iloc[:, -1]
+
+valid_index = ~y.isnull() & ~np.isinf(y)
+X = X[valid_index]
+y = y[valid_index]
+print(f" {invalid_mask.sum()} invalid data entries have been deleted.")
+
+# 3. 使用众数填充 X 中的缺失值
+for col in X.columns:
+    if X[col].isnull().any():
+        mode = X[col].mode()[0]  
+        X[col].fillna(mode, inplace=True)
+
+
+# 4. OneHot编码
+X = pd.get_dummies(X, drop_first=True)
+
+# 5. Split training set and test set.(8:2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+# 6. Training
+model = XGBRegressor(random_state=42)
+model.fit(X_train, y_train)
+
+# 7. Predict
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
+
+# 8. Output evaluation indicators
+def print_metrics(y_true, y_pred, label):
+    r2 = r2_score(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mape = mean_absolute_percentage_error(y_true, y_pred)
+    print(f"{label} R²: {r2:.4f}, RMSE: {rmse:.4f}, MAPE: {mape:.4f}")
+
+print_metrics(y_train, y_train_pred, "Train")
+print_metrics(y_test, y_test_pred, "Test")
+
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
+
+def get_metrics(y_true, y_pred):
+    r2 = r2_score(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mape = mean_absolute_percentage_error(y_true, y_pred)
+    return r2, rmse, mape
+
+r2_train, rmse_train, mape_train = get_metrics(y_train, y_train_pred)
+r2_test, rmse_test, mape_test = get_metrics(y_test, y_test_pred)
+
+# 绘图
+plt.figure(figsize=(8, 6))
+plt.scatter(y_train, y_train_pred, label='Train', alpha=0.7, marker='o')
+plt.scatter(y_test, y_test_pred, label='Test', alpha=0.7, marker='s')
+plt.plot([y.min(), y.max()], [y.min(), y.max()], color='red', linestyle='--', label='y = x')
+
+# 添加评价指标文本框
+textstr = '\n'.join((
+    f'Train R²: {r2_train:.3f}, RMSE: {rmse_train:.2f}, MAPE: {mape_train:.2%}',
+    f'Test  R²: {r2_test:.3f}, RMSE: {rmse_test:.2f}, MAPE: {mape_test:.2%}'
+))
+
+plt.text(
+    0.02, 0.75, textstr,
+    transform=plt.gca().transAxes,
+    fontsize=15,
+    verticalalignment='top',
+    bbox=dict(facecolor='white', alpha=0.0, edgecolor='white')  # 透明背景+无边框
+)
+
+
+plt.xlabel("True Value")
+plt.ylabel("Predicted Value")
+plt.title("True vs Predicted (Train & Test)")
+plt.legend(fontsize=15)
+plt.grid(False) 
+plt.tight_layout()
+plt.show()
+
+
+
+# 10. 绘制误差柱状图（预测值 - 真实值）
+errors = y_test_pred - y_test.values
+plt.figure(figsize=(10, 4))
+plt.bar(range(len(errors)), errors)
+plt.xlabel("Sample Index")
+plt.ylabel("Prediction Error")
+plt.title("Prediction Errors (Test Set)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 11. 保存特征贡献度（重要性）
+importance = model.feature_importances_
+importance = importance / importance.sum()  # 归一化
+importance_df = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': importance
+}).sort_values(by='Importance', ascending=False)
+
+
+importance_df.to_csv("Feature_Importance.csv", index=False)
+
+
+import shap
+
+# TreeExplainer
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_train)
+
+# 1. SHAP Scatter plot
+plt.figure()
+shap.summary_plot(shap_values, X_train, plot_type="dot", show=False)
+plt.tight_layout()
+plt.savefig("SHAP_DotPlot.png", dpi=300)
+plt.show()
+
+# 2. SHAP bar chart
+plt.figure()
+shap.summary_plot(shap_values, X_train, plot_type="bar", show=False)
+plt.tight_layout()
+plt.savefig("SHAP_BarPlot.png", dpi=300)
+plt.show()
