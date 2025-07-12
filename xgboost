@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 1. 读取数据
+# 1. Reading data
 df = pd.read_csv("Database.csv")
 label_encoder = LabelEncoder()
 
@@ -20,7 +20,7 @@ for column in df.columns:
         df[column] = label_encoder.fit_transform(df[column])
 
 initial_row_count = df.shape[0]
-df.dropna(inplace=True)
+#df.dropna(inplace=True)
 final_row_count = df.shape[0]
 
 
@@ -32,7 +32,7 @@ X = X[valid_index]
 y = y[valid_index]
 print(f" {invalid_mask.sum()} invalid data entries have been deleted.")
 
-# 3. 使用众数填充 X 中的缺失值
+# 3. Filling in missing values
 for col in X.columns:
     if X[col].isnull().any():
         mode = X[col].mode()[0]  
@@ -75,13 +75,12 @@ def get_metrics(y_true, y_pred):
 r2_train, rmse_train, mape_train = get_metrics(y_train, y_train_pred)
 r2_test, rmse_test, mape_test = get_metrics(y_test, y_test_pred)
 
-# 绘图
+
 plt.figure(figsize=(8, 6))
 plt.scatter(y_train, y_train_pred, label='Train', alpha=0.7, marker='o')
 plt.scatter(y_test, y_test_pred, label='Test', alpha=0.7, marker='s')
 plt.plot([y.min(), y.max()], [y.min(), y.max()], color='red', linestyle='--', label='y = x')
 
-# 添加评价指标文本框
 textstr = '\n'.join((
     f'Train R²: {r2_train:.3f}, RMSE: {rmse_train:.2f}, MAPE: {mape_train:.2%}',
     f'Test  R²: {r2_test:.3f}, RMSE: {rmse_test:.2f}, MAPE: {mape_test:.2%}'
@@ -106,7 +105,7 @@ plt.show()
 
 
 
-# 10. 绘制误差柱状图（预测值 - 真实值）
+# 10. Draw the error bar chart
 errors = y_test_pred - y_test.values
 plt.figure(figsize=(10, 4))
 plt.bar(range(len(errors)), errors)
@@ -117,9 +116,9 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-# 11. 保存特征贡献度（重要性）
+# 11. Save feature importance
 importance = model.feature_importances_
-importance = importance / importance.sum()  # 归一化
+importance = importance / importance.sum() 
 importance_df = pd.DataFrame({
     'Feature': X.columns,
     'Importance': importance
