@@ -39,7 +39,7 @@ for col in X.columns:
         X[col].fillna(mode, inplace=True)
 
 
-# 4. OneHot编码
+# 4. OneHot
 X = pd.get_dummies(X, drop_first=True)
 
 # 5. Split training set and test set.(8:2)
@@ -91,9 +91,8 @@ plt.text(
     transform=plt.gca().transAxes,
     fontsize=15,
     verticalalignment='top',
-    bbox=dict(facecolor='white', alpha=0.0, edgecolor='white')  # 透明背景+无边框
+    bbox=dict(facecolor='white', alpha=0.0, edgecolor='white') 
 )
-
 
 plt.xlabel("True Value")
 plt.ylabel("Predicted Value")
@@ -104,8 +103,7 @@ plt.tight_layout()
 plt.show()
 
 
-
-# 10. Draw the error bar chart
+# Draw the error bar chart
 errors = y_test_pred - y_test.values
 plt.figure(figsize=(10, 4))
 plt.bar(range(len(errors)), errors)
@@ -116,14 +114,13 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-# 11. Save feature importance
+# Save feature importance
 importance = model.feature_importances_
 importance = importance / importance.sum() 
 importance_df = pd.DataFrame({
     'Feature': X.columns,
     'Importance': importance
 }).sort_values(by='Importance', ascending=False)
-
 
 importance_df.to_csv("Feature_Importance.csv", index=False)
 
