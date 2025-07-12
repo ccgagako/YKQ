@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 1. Reading data
+# 1. Read data
 df = pd.read_csv("Database.csv")
 label_encoder = LabelEncoder()
 
@@ -32,29 +32,29 @@ X = X[valid_index]
 y = y[valid_index]
 print(f" {invalid_mask.sum()} invalid data entries have been deleted.")
 
-# 3. Filling in missing values
+# 3. Fill in missing values
 for col in X.columns:
     if X[col].isnull().any():
         mode = X[col].mode()[0]  
         X[col].fillna(mode, inplace=True)
 
 
-# 4. OneHot
+# OneHot
 X = pd.get_dummies(X, drop_first=True)
 
-# 5. Split training set and test set.(8:2)
+# Split training set and test set.(8:2)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-# 6. Training
+# Train
 model = XGBRegressor(random_state=42)
 model.fit(X_train, y_train)
 
-# 7. Predict
+# Predict
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
 
-# 8. Output evaluation indicators
+# Output evaluation indicators
 def print_metrics(y_true, y_pred, label):
     r2 = r2_score(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
